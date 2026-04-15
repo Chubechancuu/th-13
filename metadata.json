@@ -1,0 +1,6 @@
+{
+  "name": "EduLedger Pro: AI Student Companion",
+  "description": "Nền tảng siêu ứng dụng hỗ trợ học tập, thực tập ảo và phát triển sự nghiệp toàn diện cho sinh viên với công nghệ AI.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": []
+}
