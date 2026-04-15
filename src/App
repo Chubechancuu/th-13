@@ -1,0 +1,465 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  LayoutDashboard, 
+  Calendar, 
+  Clock, 
+  BookOpen, 
+  Map, 
+  Briefcase, 
+  Mic, 
+  Settings as SettingsIcon,
+  Bell,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Search,
+  User,
+  LogOut,
+  Menu,
+  X,
+  Library,
+  Zap,
+  Sword
+} from 'lucide-react';
+import { UserProfile } from './types';
+import { cn } from './lib/utils';
+
+// Components
+import Dashboard from './components/Dashboard';
+import StudyPlanner from './components/StudyPlanner';
+import PomodoroFocus from './components/PomodoroFocus';
+import AITutor from './components/AITutor';
+import Roadmap from './components/Roadmap';
+import InternshipArena from './components/InternshipArena';
+import Analytics from './components/Analytics';
+import Settings from './components/Settings';
+import LearningCenter from './components/LearningCenter';
+
+const menuItems = [
+  { id: 'dashboard', label: 'Tổng quan', icon: LayoutDashboard, category: 'Chính' },
+  { id: 'learning', label: 'Học thuật & Thử thách', icon: Library, category: 'Học tập' },
+  { id: 'planner', label: 'Kế hoạch học tập', icon: Calendar, category: 'Học tập' },
+  { id: 'pomodoro', label: 'Tập trung', icon: Clock, category: 'Học tập' },
+  { id: 'tutor', label: 'AI Tutor', icon: BookOpen, category: 'Học tập' },
+  { id: 'roadmap', label: 'Lộ trình sự nghiệp', icon: Map, category: 'Sự nghiệp' },
+  { id: 'arena', label: 'Đấu trường thực tập', icon: Sword, category: 'Sự nghiệp' },
+  { id: 'analytics', label: 'Phân tích', icon: Zap, category: 'Hệ thống' },
+  { id: 'settings', label: 'Cài đặt', icon: SettingsIcon, category: 'Hệ thống' },
+];
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isFirstTime, setIsFirstTime] = useState(true);
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('career_hub_profile');
+    if (saved) {
+      setProfile(JSON.parse(saved));
+      setIsFirstTime(false);
+    }
+  }, []);
+
+  const handleStart = (data: UserProfile) => {
+    setProfile(data);
+    setIsFirstTime(false);
+    localStorage.setItem('career_hub_profile', JSON.stringify(data));
+  };
+
+  if (isFirstTime) {
+    return <Onboarding onComplete={handleStart} />;
+  }
+
+  const renderContent = () => {
+    const props = { 
+      profile: profile!, 
+      onUpdateProfile: (p: UserProfile) => {
+        setProfile(p);
+        localStorage.setItem('career_hub_profile', JSON.stringify(p));
+      },
+      onNavigate: (tab: string) => {
+        setActiveTab(tab);
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    switch (activeTab) {
+      case 'dashboard': return <Dashboard {...props} />;
+      case 'learning': return <LearningCenter {...props} />;
+      case 'planner': return <StudyPlanner {...props} />;
+      case 'pomodoro': return <PomodoroFocus {...props} />;
+      case 'tutor': return <AITutor {...props} />;
+      case 'roadmap': return <Roadmap {...props} />;
+      case 'arena': return <InternshipArena {...props} />;
+      case 'analytics': return <Analytics {...props} />;
+      case 'settings': return <Settings {...props} />;
+      default: return <Dashboard {...props} />;
+    }
+  };
+
+  const categories = ['Chính', 'Học tập', 'Sự nghiệp', 'Hệ thống'];
+
+  return (
+    <div className={cn(
+      "flex h-screen bg-bg overflow-hidden text-text transition-colors duration-300",
+      profile?.theme === 'dark' ? "dark" : ""
+    )}>
+      {/* Sidebar Desktop */}
+      <motion.aside 
+        initial={false}
+        animate={{ width: isSidebarOpen ? 280 : 80 }}
+        className="hidden lg:flex bg-sidebar border-r border-border flex-col z-30 shadow-2xl relative"
+      >
+        <div className="p-6 flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 flex-shrink-0">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          {isSidebarOpen && (
+            <h1 className="font-display font-black text-xl tracking-tighter text-text">
+              STUDENT <span className="text-primary">HUB</span>
+            </h1>
+          )}
+        </div>
+
+        <nav className="flex-1 px-4 space-y-6 overflow-y-auto scrollbar-hide py-4">
+          {categories.map(cat => (
+            <div key={cat} className="space-y-1">
+              {isSidebarOpen && (
+                <p className="text-[10px] uppercase tracking-widest text-text-muted mb-2 px-3 font-bold">
+                  {cat}
+                </p>
+              )}
+              {menuItems.filter(i => i.category === cat).map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative",
+                    activeTab === item.id 
+                      ? "bg-primary text-white shadow-lg shadow-primary/20 font-semibold" 
+                      : "text-text-muted hover:bg-slate-100 hover:text-text"
+                  )}
+                >
+                  <item.icon className={cn("w-5 h-5 flex-shrink-0", activeTab === item.id ? "text-white" : "group-hover:scale-110 transition-transform")} />
+                  {isSidebarOpen && <span className="text-sm truncate">{item.label}</span>}
+                  {activeTab === item.id && !isSidebarOpen && (
+                    <div className="absolute left-full ml-2 px-2 py-1 bg-text text-white text-xs rounded shadow-lg whitespace-nowrap z-50">
+                      {item.label}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-border">
+          <div className={cn(
+            "flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-border mb-4",
+            !isSidebarOpen && "justify-center"
+          )}>
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm border border-primary/20 flex-shrink-0">
+              {profile?.level}
+            </div>
+            {isSidebarOpen && (
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-text truncate">{profile?.name}</p>
+                <p className="text-[10px] text-text-muted truncate">{profile?.major}</p>
+                <div className="w-full h-1.5 bg-slate-200 rounded-full mt-2 overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(profile?.xp || 0) % 100}%` }}
+                    className="h-full bg-primary" 
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-text-muted hover:bg-slate-100 rounded-xl transition-colors border border-border"
+          >
+            {isSidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            {isSidebarOpen && <span className="text-sm font-medium">Thu gọn</span>}
+          </button>
+        </div>
+      </motion.aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden relative">
+        {/* Header */}
+        <header className="h-20 bg-sidebar/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 lg:px-8 z-20 sticky top-0">
+          <div className="flex items-center gap-4 lg:gap-6">
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2 text-text-muted hover:bg-slate-100 rounded-xl transition-all"
+            >
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+            <h2 className="font-display font-bold text-lg lg:text-xl text-text truncate max-w-[150px] lg:max-w-none">
+              {menuItems.find(i => i.id === activeTab)?.label}
+            </h2>
+          </div>
+          
+          <div className="flex items-center gap-2 lg:gap-4">
+            <div className="hidden md:flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-border shadow-sm">
+                <span className="text-sm font-bold text-warning">🔥 {profile?.streak}</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-border shadow-sm">
+                <span className="text-sm font-bold text-warning">⭐ {profile?.xp}</span>
+              </div>
+            </div>
+            
+            <button className="relative p-2 text-text-muted hover:bg-slate-100 rounded-full transition-colors">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger rounded-full border-2 border-white" />
+            </button>
+            
+            <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-bg border border-border p-0.5 shadow-sm overflow-hidden">
+              <img 
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.name}`} 
+                alt="avatar" 
+                className="w-full h-full object-cover" 
+              />
+            </div>
+          </div>
+        </header>
+
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 lg:pb-8 scrollbar-hide bg-bg/50">
+          <AnimatePresence mode="wait">
+            {isMobileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, x: -100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -100 }}
+                className="lg:hidden fixed inset-0 z-50 bg-white p-6 pt-24"
+              >
+                <div className="space-y-8">
+                  {categories.map(cat => (
+                    <div key={cat} className="space-y-2">
+                      <p className="text-[10px] uppercase tracking-widest text-text-muted mb-2 px-3 font-bold">{cat}</p>
+                      {menuItems.filter(i => i.category === cat).map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            setActiveTab(item.id);
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className={cn(
+                            "w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all",
+                            activeTab === item.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-text-muted hover:bg-slate-50"
+                          )}
+                        >
+                          <item.icon className="w-6 h-6" />
+                          <span className="text-base font-bold">{item.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="max-w-7xl mx-auto"
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Mobile Bottom Nav */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border flex items-center justify-around p-2 z-40 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+          {menuItems.filter(i => ['dashboard', 'learning', 'planner', 'tutor', 'settings'].includes(i.id)).map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={cn(
+                "flex flex-col items-center gap-1 p-2 rounded-xl transition-all",
+                activeTab === item.id ? "text-primary" : "text-text-muted"
+              )}
+            >
+              <item.icon className="w-5 h-5" />
+              <span className="text-[10px] font-bold">{item.label.split(' ')[0]}</span>
+            </button>
+          ))}
+        </nav>
+      </main>
+    </div>
+  );
+}
+
+function Onboarding({ onComplete }: { onComplete: (profile: UserProfile) => void }) {
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    name: '',
+    major: '',
+    year: 1,
+    gpa: 3.0,
+    goalGPA: 4.0,
+    careerGoal: '',
+    interests: [] as string[]
+  });
+
+  const interests = ['Marketing', 'Finance', 'HR', 'Accounting', 'Logistics', 'IT', 'Banking', 'Business Admin'];
+
+  const handleNext = () => setStep(s => s + 1);
+  const handleBack = () => setStep(s => s - 1);
+
+  const handleSubmit = () => {
+    onComplete({
+      ...formData,
+      xp: 0,
+      level: 1,
+      streak: 1,
+      focusTime: 0,
+      completedTasks: 0,
+      lastActive: Date.now(),
+      theme: 'light',
+      language: 'vi',
+      studyPreferences: {
+        pomodoroFocus: true,
+        notifications: true,
+        autoRearrange: true
+      }
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Background Decorations */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-3xl" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-success/5 rounded-full blur-3xl" />
+
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-lg w-full bg-white rounded-3xl shadow-2xl p-10 border border-slate-100 z-10"
+      >
+        <div className="text-center mb-10">
+          <div className="w-20 h-20 bg-primary rounded-3xl flex items-center justify-center text-white font-bold text-4xl shadow-2xl shadow-primary/20 mx-auto mb-6 animate-float">
+            <Sparkles className="w-10 h-10" />
+          </div>
+          <h1 className="font-display font-black text-3xl text-slate-900 tracking-tight">Chào mừng bạn!</h1>
+          <p className="text-slate-500 mt-2">Hãy cho Career Hub biết một chút về bạn để cá nhân hóa lộ trình.</p>
+        </div>
+
+        <div className="space-y-6">
+          {step === 1 && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Họ và tên của bạn</label>
+                <input 
+                  type="text" 
+                  value={formData.name} 
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                  placeholder="Ví dụ: Nguyễn Văn A"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Chuyên ngành học</label>
+                <input 
+                  type="text" 
+                  value={formData.major} 
+                  onChange={(e) => setFormData({...formData, major: e.target.value})}
+                  className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                  placeholder="Ví dụ: Quản trị kinh doanh"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Năm học</label>
+                  <select 
+                    value={formData.year} 
+                    onChange={(e) => setFormData({...formData, year: Number(e.target.value)})}
+                    className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all bg-white"
+                  >
+                    {[1, 2, 3, 4].map(y => <option key={y} value={y}>Năm {y}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">GPA hiện tại</label>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    min="0"
+                    max="4"
+                    value={formData.gpa} 
+                    onChange={(e) => setFormData({...formData, gpa: Number(e.target.value)})}
+                    className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 2 && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Mục tiêu sự nghiệp</label>
+                <textarea 
+                  value={formData.careerGoal} 
+                  onChange={(e) => setFormData({...formData, careerGoal: e.target.value})}
+                  className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all h-32 resize-none"
+                  placeholder="Ví dụ: Trở thành Marketing Manager tại một tập đoàn đa quốc gia..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Lĩnh vực quan tâm</label>
+                <div className="flex flex-wrap gap-2">
+                  {interests.map(interest => (
+                    <button
+                      key={interest}
+                      onClick={() => {
+                        const newInterests = formData.interests.includes(interest)
+                          ? formData.interests.filter(i => i !== interest)
+                          : [...formData.interests, interest];
+                        setFormData({...formData, interests: newInterests});
+                      }}
+                      className={cn(
+                        "px-4 py-2 rounded-full text-xs font-bold transition-all border",
+                        formData.interests.includes(interest)
+                          ? "bg-primary text-white border-primary shadow-lg shadow-primary/20"
+                          : "bg-white text-slate-500 border-slate-200 hover:border-primary hover:text-primary"
+                      )}
+                    >
+                      {interest}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          <div className="flex gap-4 pt-6">
+            {step > 1 && (
+              <button 
+                onClick={handleBack}
+                className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+              >
+                Quay lại
+              </button>
+            )}
+            <button 
+              onClick={step === 2 ? handleSubmit : handleNext}
+              disabled={step === 1 ? (!formData.name || !formData.major) : !formData.careerGoal}
+              className="flex-[2] py-4 bg-primary text-white rounded-2xl font-bold shadow-xl shadow-primary/20 hover:bg-primary-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {step === 2 ? 'Bắt đầu hành trình' : 'Tiếp tục'}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
